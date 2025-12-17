@@ -59,7 +59,7 @@
             </div>
             <div>
                 <h1 class="font-bold text-xl text-slate-100 tracking-tight glow-text">Felix账本</h1>
-                <p class="text-xs text-slate-500 font-mono tracking-wider mt-1">FINANCE OS v2.4</p>
+                <p class="text-xs text-slate-500 font-mono tracking-wider mt-1">FINANCE OS v2.5</p>
             </div>
         </div>
 
@@ -82,7 +82,7 @@
             </button>
         </nav>
 
-        <div class="p-6">
+        <div class="p-6 space-y-4">
             <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 text-center backdrop-blur-sm">
                 <div class="flex items-center justify-center gap-2 mb-2 text-cyan-400">
                     <i data-lucide="hard-drive" class="w-4 h-4"></i>
@@ -90,6 +90,11 @@
                 </div>
                 <p class="text-xs text-slate-500">数据加密存储于本地<br>请勿随意清除缓存</p>
             </div>
+            
+            <button onclick="requestClearAllData()" class="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-rose-900/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 hover:text-rose-300 transition-all text-xs font-bold uppercase tracking-wider group">
+                <i data-lucide="trash-2" class="w-4 h-4 group-hover:scale-110 transition-transform"></i>
+                清空所有数据
+            </button>
         </div>
     </aside>
 
@@ -121,7 +126,7 @@
         <span id="toast-msg">操作成功</span>
     </div>
 
-    <!-- Confirm Modal (New!) -->
+    <!-- Confirm Modal -->
     <div id="confirm-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-[60] flex items-center justify-center fade-in">
         <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-100">
             <div class="flex items-center gap-4 mb-4">
@@ -129,13 +134,13 @@
                     <i data-lucide="alert-triangle" class="w-5 h-5"></i>
                 </div>
                 <div>
-                    <h3 class="font-bold text-lg text-slate-100">确认删除？</h3>
+                    <h3 class="font-bold text-lg text-slate-100">确认操作？</h3>
                     <p class="text-sm text-slate-400" id="confirm-msg">此操作无法撤销。</p>
                 </div>
             </div>
             <div class="flex gap-3 justify-end mt-6">
                 <button onclick="closeConfirmModal()" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors">取消</button>
-                <button id="confirm-btn-action" class="px-4 py-2 rounded-lg text-sm font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-900/50 transition-all">确认删除</button>
+                <button id="confirm-btn-action" class="px-4 py-2 rounded-lg text-sm font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-900/50 transition-all">确认</button>
             </div>
         </div>
     </div>
@@ -892,6 +897,30 @@
 
         function requestDeleteTransaction(id) {
             showConfirm('确定要删除这条记录吗？', () => deleteTransaction(id));
+        }
+        
+        function requestClearAllData() {
+            showConfirm('⚠️ 警告：这将永久删除所有账单记录和文件信息，且无法恢复！确定要继续吗？', () => clearAllData());
+        }
+        
+        function clearAllData() {
+            transactions = [];
+            importedFiles = [];
+            localStorage.removeItem('myBookkeepingData');
+            localStorage.removeItem('myBookkeepingFiles');
+            
+            showToast('所有数据已清空');
+            
+            // Reset file meta if any
+            currentFileMeta = null;
+            
+            // Refresh view
+            if(currentView === 'dashboard') renderDashboard(document.getElementById('content-area'));
+            else if(currentView === 'import') renderImport(document.getElementById('content-area'));
+            else if(currentView === 'analysis') { renderAnalysis(document.getElementById('content-area')); renderAnalysisCharts(); }
+            
+            // Re-init icons
+            lucide.createIcons();
         }
 
         function deleteTransaction(id) {
