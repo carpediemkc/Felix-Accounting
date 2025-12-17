@@ -59,7 +59,7 @@
             </div>
             <div>
                 <h1 class="font-bold text-xl text-slate-100 tracking-tight glow-text">Felix账本</h1>
-                <p class="text-xs text-slate-500 font-mono tracking-wider mt-1">FINANCE OS v2.5</p>
+                <p class="text-xs text-slate-500 font-mono tracking-wider mt-1">FINANCE OS v2.8</p>
             </div>
         </div>
 
@@ -216,7 +216,7 @@
                 localStorage.setItem('myBookkeepingData', JSON.stringify(transactions));
                 localStorage.setItem('myBookkeepingFiles', JSON.stringify(importedFiles));
             } catch (e) {
-                showToast('数据保存失败：缓存已满');
+                alert('数据保存失败！请清理缓存。');
             }
         }
 
@@ -282,28 +282,31 @@
         // --- Render: Dashboard ---
         function renderDashboard(container) {
             const sortedTransactions = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
-            const income = sortedTransactions.filter(t => t.type === 'income').reduce((acc, curr) => acc + curr.amount, 0);
-            const expense = sortedTransactions.filter(t => t.type === 'expense').reduce((acc, curr) => acc + curr.amount, 0);
-            const balance = income - expense;
+            
+            // Calculate Monthly Stats - Current Month Only
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth();
+            
+            const monthlyTransactions = sortedTransactions.filter(t => {
+                const d = new Date(t.date);
+                return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+            });
+
+            const monthlyIncome = monthlyTransactions.filter(t => t.type === 'income').reduce((acc, curr) => acc + curr.amount, 0);
+            const monthlyExpense = monthlyTransactions.filter(t => t.type === 'expense').reduce((acc, curr) => acc + curr.amount, 0);
 
             container.innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                    <div class="col-span-1 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-3xl p-8 text-white shadow-2xl shadow-blue-900/30 relative overflow-hidden group border border-white/10">
-                        <div class="absolute top-0 right-0 w-40 h-40 bg-white opacity-5 rounded-full blur-2xl -mr-10 -mt-10 transition-transform group-hover:scale-125 duration-1000"></div>
-                        <div class="relative z-10">
-                            <p class="text-blue-100 text-xs font-mono font-bold tracking-widest mb-3 opacity-80">NET ASSETS</p>
-                            <div class="text-4xl font-extrabold tracking-tight glow-text font-mono">${formatCurrency(balance)}</div>
-                        </div>
-                    </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
                     <div class="glass-panel rounded-3xl p-8 shadow-lg hover:bg-slate-800/80 transition-colors flex flex-col justify-center relative overflow-hidden group">
                         <div class="absolute right-6 top-6 p-2 bg-emerald-500/10 rounded-xl text-emerald-400 group-hover:scale-110 transition-transform"><i data-lucide="arrow-up-right" class="w-5 h-5"></i></div>
                         <p class="text-slate-400 text-xs font-bold mb-2 uppercase tracking-wide">本月收入</p>
-                        <div class="text-3xl font-bold text-slate-100 font-mono">${formatCurrency(income)}</div>
+                        <div class="text-3xl font-bold text-slate-100 font-mono">${formatCurrency(monthlyIncome)}</div>
                     </div>
                     <div class="glass-panel rounded-3xl p-8 shadow-lg hover:bg-slate-800/80 transition-colors flex flex-col justify-center relative overflow-hidden group">
                         <div class="absolute right-6 top-6 p-2 bg-rose-500/10 rounded-xl text-rose-400 group-hover:scale-110 transition-transform"><i data-lucide="arrow-down-right" class="w-5 h-5"></i></div>
                         <p class="text-slate-400 text-xs font-bold mb-2 uppercase tracking-wide">本月支出</p>
-                        <div class="text-3xl font-bold text-slate-100 font-mono">${formatCurrency(expense)}</div>
+                        <div class="text-3xl font-bold text-slate-100 font-mono">${formatCurrency(monthlyExpense)}</div>
                     </div>
                 </div>
 
@@ -333,7 +336,7 @@
                                 </div>
                                 <div class="min-w-0">
                                     <div class="flex items-center gap-3 mb-1">
-                                        <span class="font-bold text-slate-200 truncate group-hover:text-blue-400 transition-colors">${t.category.name}</span>
+                                        <span onclick="openEditModal('${t.id}')" class="font-bold text-slate-200 truncate group-hover:text-blue-400 transition-colors cursor-pointer hover:underline decoration-blue-500/30 underline-offset-4" title="点击修改分类">${t.category.name}</span>
                                         <span class="text-[10px] text-slate-500 bg-slate-900/50 px-2 py-0.5 rounded border border-slate-800">${t.paymentMethod || '其他'}</span>
                                     </div>
                                     <div class="text-xs text-slate-500 truncate pr-4 flex items-center gap-2">
