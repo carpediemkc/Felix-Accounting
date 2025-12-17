@@ -12,23 +12,13 @@
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         
-        // Tailwind Config for Custom Colors
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        dark: {
-                            900: '#0f172a', // Main Background
-                            800: '#1e293b', // Sidebar / Cards
-                            700: '#334155', // Borders
-                        },
-                        neon: {
-                            blue: '#3b82f6',
-                            purple: '#8b5cf6',
-                            cyan: '#06b6d4',
-                            green: '#10b981'
-                        }
+                        dark: { 900: '#0f172a', 800: '#1e293b', 700: '#334155' },
+                        neon: { blue: '#3b82f6', purple: '#8b5cf6', cyan: '#06b6d4', green: '#10b981' }
                     },
                     fontFamily: {
                         sans: ['Inter', 'Noto Sans SC', 'sans-serif'],
@@ -40,41 +30,17 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body { 
-            font-family: 'Inter', 'Noto Sans SC', sans-serif; 
-            background-color: #020617; /* Very Dark Blue */
-            color: #e2e8f0;
-        }
-        
+        body { font-family: 'Inter', 'Noto Sans SC', sans-serif; background-color: #020617; color: #e2e8f0; }
         .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 99px; }
         ::-webkit-scrollbar-thumb:hover { background: #475569; }
-
-        /* Neon Glow Effects */
         .glow-text { text-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
-        .glass-panel {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        
-        .nav-active {
-            background: rgba(59, 130, 246, 0.15) !important;
-            color: #60a5fa !important;
-            border-left: 3px solid #60a5fa;
-            text-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
-        }
-
-        .drag-active {
-            border-color: #60a5fa !important;
-            background-color: rgba(59, 130, 246, 0.1) !important;
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
-        }
+        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .nav-active { background: rgba(59, 130, 246, 0.15) !important; color: #60a5fa !important; border-left: 3px solid #60a5fa; text-shadow: 0 0 8px rgba(59, 130, 246, 0.4); }
+        .drag-active { border-color: #60a5fa !important; background-color: rgba(59, 130, 246, 0.1) !important; box-shadow: 0 0 15px rgba(59, 130, 246, 0.2); }
     </style>
 </head>
 <body class="h-screen flex overflow-hidden selection:bg-cyan-500/30 selection:text-cyan-200">
@@ -93,7 +59,7 @@
             </div>
             <div>
                 <h1 class="font-bold text-xl text-slate-100 tracking-tight glow-text">Felix账本</h1>
-                <p class="text-xs text-slate-500 font-mono tracking-wider mt-1">FINANCE OS v2.0</p>
+                <p class="text-xs text-slate-500 font-mono tracking-wider mt-1">FINANCE OS v2.1</p>
             </div>
         </div>
 
@@ -158,9 +124,7 @@
     <!-- Edit Modal -->
     <div id="edit-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 flex items-center justify-center fade-in">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 w-full max-w-lg m-4 shadow-2xl shadow-blue-900/20 transform transition-all scale-100 relative overflow-hidden">
-            <!-- Modal Background Glow -->
             <div class="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none"></div>
-            
             <div class="flex justify-between items-center mb-8 relative z-10">
                 <h3 class="text-xl font-bold text-slate-100 flex items-center gap-2">
                     <i data-lucide="tag" class="w-5 h-5 text-blue-400"></i>
@@ -170,10 +134,7 @@
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            
-            <div id="edit-category-grid" class="grid grid-cols-4 gap-4 mb-2 relative z-10">
-                <!-- Categories injected here -->
-            </div>
+            <div id="edit-category-grid" class="grid grid-cols-4 gap-4 mb-2 relative z-10"></div>
             <input type="hidden" id="edit-transaction-id">
         </div>
     </div>
@@ -204,19 +165,38 @@
             ]
         };
 
+        // Initialize Data
         let transactions = [];
+        let importedFiles = []; // New: Store metadata of imported files
+        
         try {
             const savedData = localStorage.getItem('myBookkeepingData');
             transactions = savedData ? JSON.parse(savedData) : [];
-        } catch (e) { transactions = []; }
+            const savedFiles = localStorage.getItem('myBookkeepingFiles');
+            importedFiles = savedFiles ? JSON.parse(savedFiles) : [];
+        } catch (e) { 
+            console.error("Failed to load data:", e);
+            transactions = [];
+            importedFiles = [];
+        }
 
         let currentView = 'dashboard';
         let importDataCache = []; 
         let charts = {};
         let currentEditingId = null;
+        let currentFileMeta = null; // Store temp file meta during import
 
         // --- Helpers ---
-        function saveToStorage() { try { localStorage.setItem('myBookkeepingData', JSON.stringify(transactions)); } catch(e){ alert('保存失败，请清理缓存'); } }
+        function saveToStorage() {
+            try {
+                localStorage.setItem('myBookkeepingData', JSON.stringify(transactions));
+                localStorage.setItem('myBookkeepingFiles', JSON.stringify(importedFiles));
+                console.log('Data saved.');
+            } catch (e) {
+                alert('数据保存失败！请清理缓存。');
+            }
+        }
+
         function showToast(msg) {
             const toast = document.getElementById('toast');
             document.getElementById('toast-msg').textContent = msg;
@@ -253,7 +233,6 @@
                 if(!picker.value) picker.value = new Date().toISOString().slice(0, 7);
             }
             
-            // Nav Styling
             document.querySelectorAll('.nav-btn').forEach(btn => 
                 btn.className = "nav-btn w-full flex items-center gap-4 px-5 py-3.5 text-sm font-medium rounded-r-xl transition-all duration-200 text-slate-400 hover:text-slate-100 hover:bg-slate-800/50"
             );
@@ -277,7 +256,7 @@
             if(view === 'import') bindDragEvents();
         }
 
-        // --- Render: Dashboard (Modern List) ---
+        // --- Render: Dashboard ---
         function renderDashboard(container) {
             const sortedTransactions = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
             const income = sortedTransactions.filter(t => t.type === 'income').reduce((acc, curr) => acc + curr.amount, 0);
@@ -285,7 +264,6 @@
             const balance = income - expense;
 
             container.innerHTML = `
-                <!-- Cards Row -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                     <div class="col-span-1 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-3xl p-8 text-white shadow-2xl shadow-blue-900/30 relative overflow-hidden group border border-white/10">
                         <div class="absolute top-0 right-0 w-40 h-40 bg-white opacity-5 rounded-full blur-2xl -mr-10 -mt-10 transition-transform group-hover:scale-125 duration-1000"></div>
@@ -306,13 +284,11 @@
                     </div>
                 </div>
 
-                <!-- Transaction List Header -->
                 <div class="flex items-center justify-between mb-6 px-2">
                     <h3 class="text-lg font-bold text-slate-200">近期明细</h3>
                     <span class="text-xs font-mono font-bold text-slate-500 bg-slate-800 border border-slate-700 px-3 py-1 rounded-lg">${sortedTransactions.length} RECORDS</span>
                 </div>
 
-                <!-- Modern List -->
                 <div class="space-y-3">
                     ${sortedTransactions.length === 0 ? `
                         <div class="flex flex-col items-center justify-center py-24 text-slate-600 border-2 border-dashed border-slate-800 rounded-3xl">
@@ -322,19 +298,16 @@
                     ` : sortedTransactions.map(t => `
                         <div class="glass-panel rounded-2xl p-4 flex items-center justify-between hover:bg-slate-800 transition-all duration-200 group">
                             <div class="flex items-center gap-5 overflow-hidden">
-                                <!-- Date Box -->
                                 <div class="hidden sm:flex flex-col items-center justify-center w-14 h-14 bg-slate-800 rounded-xl text-slate-400 flex-shrink-0 font-mono text-xs leading-tight border border-slate-700">
                                     <span class="font-bold text-slate-200 text-sm">${new Date(t.date).getDate()}</span>
                                     <span class="text-[10px] uppercase text-slate-500">${new Date(t.date).toLocaleString('en', {month:'short'})}</span>
                                 </div>
-                                <!-- Icon -->
                                 <div onclick="openEditModal(${t.id})" class="w-12 h-12 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xl cursor-pointer hover:bg-slate-700 hover:border-blue-500/30 hover:text-blue-400 transition-all relative flex-shrink-0 group/icon" title="点击修改分类">
                                     ${t.category.icon}
                                     <div class="absolute -bottom-1 -right-1 bg-slate-900 border border-slate-700 rounded-full p-1 opacity-0 group-hover/icon:opacity-100 transition-opacity">
                                         <i data-lucide="pencil" class="w-2.5 h-2.5 text-blue-400"></i>
                                     </div>
                                 </div>
-                                <!-- Info -->
                                 <div class="min-w-0">
                                     <div class="flex items-center gap-3 mb-1">
                                         <span class="font-bold text-slate-200 truncate group-hover:text-blue-400 transition-colors">${t.category.name}</span>
@@ -347,8 +320,6 @@
                                     </div>
                                 </div>
                             </div>
-                            
-                            <!-- Amount & Actions -->
                             <div class="flex items-center gap-6 pl-4 flex-shrink-0">
                                 <span class="font-bold text-lg font-mono tracking-tight ${t.type === 'income' ? 'text-emerald-400' : 'text-slate-200'}">
                                     ${t.type === 'income' ? '+' : '-'} ${t.amount.toFixed(2)}
@@ -373,7 +344,6 @@
                 <div class="max-w-xl mx-auto mt-8">
                     <div class="glass-panel rounded-3xl p-8 shadow-2xl">
                         <form id="add-form" onsubmit="handleAddSubmit(event)" class="space-y-8">
-                            <!-- Toggle -->
                             <div class="bg-slate-900 p-1.5 rounded-2xl flex border border-slate-800">
                                 <label class="flex-1 cursor-pointer">
                                     <input type="radio" name="type" value="expense" checked class="peer hidden" onchange="updateCategories('expense')">
@@ -384,8 +354,6 @@
                                     <div class="py-3 text-center rounded-xl font-bold text-slate-500 peer-checked:bg-slate-800 peer-checked:text-emerald-400 peer-checked:shadow-lg peer-checked:shadow-black/20 transition-all duration-300">收入</div>
                                 </label>
                             </div>
-
-                            <!-- Amount -->
                             <div>
                                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 pl-1">金额</label>
                                 <div class="relative group">
@@ -393,15 +361,11 @@
                                     <input type="number" step="0.01" name="amount" required placeholder="0.00" class="w-full pl-8 py-2 text-5xl font-mono font-bold text-slate-100 border-b-2 border-slate-800 focus:border-blue-500 focus:outline-none bg-transparent placeholder-slate-700 transition-all">
                                 </div>
                             </div>
-
-                            <!-- Categories -->
                             <div>
                                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 pl-1">选择分类</label>
                                 <div id="category-grid" class="grid grid-cols-4 sm:grid-cols-5 gap-3"></div>
                                 <input type="hidden" name="category_id" id="selected-category-id" required>
                             </div>
-                            
-                            <!-- Details -->
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <div class="space-y-2">
                                     <label class="text-xs font-bold text-slate-500 pl-1">时间</label>
@@ -416,7 +380,6 @@
                                     <input type="text" name="note" placeholder="写点什么..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm font-medium text-slate-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all outline-none">
                                 </div>
                             </div>
-
                             <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] border border-blue-500/50">
                                 确认记录
                             </button>
@@ -427,10 +390,11 @@
             updateCategories('expense');
         }
 
-        // --- Render: Import ---
+        // --- Render: Import & Files ---
         function renderImport(container) {
             container.innerHTML = `
-                <div class="max-w-3xl mx-auto space-y-8 mt-4">
+                <div class="max-w-4xl mx-auto space-y-8 mt-4">
+                    <!-- Upload Area -->
                     <div id="import-step-1" class="glass-panel rounded-3xl p-10 shadow-2xl">
                         <div class="text-center mb-10">
                             <div class="w-16 h-16 bg-slate-800 border border-slate-700 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-inner">
@@ -464,17 +428,17 @@
                             </label>
                         </div>
 
-                        <div id="drop-zone" class="border-2 border-dashed border-slate-700 rounded-3xl h-56 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-500/5 transition-all relative group bg-slate-800/20">
+                        <div id="drop-zone" class="border-2 border-dashed border-slate-700 rounded-3xl h-48 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-500/5 transition-all relative group bg-slate-800/20">
                             <input type="file" id="file-upload" accept=".csv, .xlsx, .xls, .pdf" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleFileSelect(event)">
                             <div class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform border border-slate-700">
                                 <i data-lucide="plus" class="w-8 h-8 text-slate-400 group-hover:text-blue-400"></i>
                             </div>
                             <p class="text-slate-300 font-bold text-lg group-hover:text-blue-400">点击或拖拽上传</p>
-                            <p class="text-xs text-slate-500 mt-2">AI 智能识别编码与格式</p>
                         </div>
                     </div>
 
-                    <div id="import-preview" class="hidden glass-panel rounded-3xl shadow-xl overflow-hidden">
+                    <!-- Import Preview (Hidden by default) -->
+                    <div id="import-preview" class="hidden glass-panel rounded-3xl shadow-xl overflow-hidden mb-8">
                         <div class="p-6 border-b border-slate-700/50 flex justify-between items-center bg-emerald-900/20">
                             <div class="flex items-center gap-3 text-emerald-400">
                                 <div class="bg-emerald-900/50 p-2 rounded-lg"><i data-lucide="check" class="w-4 h-4"></i></div>
@@ -482,8 +446,33 @@
                             </div>
                             <button onclick="resetImport()" class="text-sm font-bold text-slate-400 hover:text-white transition-colors">重新上传</button>
                         </div>
-                        <div class="max-h-[400px] overflow-y-auto custom-scrollbar"><table class="w-full text-left text-sm text-slate-400"><thead class="bg-slate-800/80 text-slate-300 sticky top-0 font-bold uppercase text-xs tracking-wider"><tr><th class="px-6 py-4">时间</th><th class="px-6 py-4">分类</th><th class="px-6 py-4">备注</th><th class="px-6 py-4">支付方式</th><th class="px-6 py-4 text-right">金额</th></tr></thead><tbody id="preview-tbody" class="divide-y divide-slate-800/50"></tbody></table></div>
+                        <div class="max-h-[300px] overflow-y-auto custom-scrollbar"><table class="w-full text-left text-sm text-slate-400"><thead class="bg-slate-800/80 text-slate-300 sticky top-0 font-bold uppercase text-xs tracking-wider"><tr><th class="px-6 py-4">时间</th><th class="px-6 py-4">分类</th><th class="px-6 py-4">备注</th><th class="px-6 py-4">支付方式</th><th class="px-6 py-4 text-right">金额</th></tr></thead><tbody id="preview-tbody" class="divide-y divide-slate-800/50"></tbody></table></div>
                         <div class="p-6 border-t border-slate-700/50 bg-slate-800/30 text-right"><button onclick="commitImport()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-10 py-3 rounded-xl font-bold shadow-lg shadow-emerald-900/50 transition-all hover:scale-105 active:scale-95 border border-emerald-500/50">确认导入</button></div>
+                    </div>
+
+                    <!-- Imported Files List -->
+                    <div class="glass-panel rounded-3xl p-8 border border-slate-700/50">
+                        <h3 class="font-bold text-slate-100 mb-6 flex items-center gap-2"><i data-lucide="folder-check" class="w-5 h-5 text-blue-400"></i> 已上传文件</h3>
+                        <div class="space-y-3" id="file-list">
+                            ${importedFiles.length === 0 ? '<div class="text-center text-slate-500 py-6 text-sm">暂无上传记录</div>' : 
+                                importedFiles.map(file => `
+                                    <div class="flex items-center justify-between bg-slate-800/50 p-4 rounded-xl border border-slate-700 hover:border-slate-600 transition-colors group">
+                                        <div class="flex items-center gap-4">
+                                            <div class="w-10 h-10 rounded-lg bg-slate-700 flex items-center justify-center text-slate-300">
+                                                <i data-lucide="${file.type === 'pdf' ? 'file-text' : 'file-spreadsheet'}" class="w-5 h-5"></i>
+                                            </div>
+                                            <div>
+                                                <div class="font-bold text-slate-200 text-sm mb-0.5">${file.name}</div>
+                                                <div class="text-xs text-slate-500 font-mono">${new Date(file.date).toLocaleString()} • ${file.count} 笔记录</div>
+                                            </div>
+                                        </div>
+                                        <button onclick="deleteFile('${file.id}')" class="text-slate-500 hover:text-rose-400 p-2 rounded-lg hover:bg-rose-500/10 transition-colors" title="删除此文件及相关记录">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                `).join('')
+                            }
+                        </div>
                     </div>
                 </div>
             `;
@@ -655,22 +644,29 @@
 
         function handleFileProcess(file) {
             const source = document.querySelector('input[name="source"]:checked').value;
+            // Store basic meta for now, count will be updated after process
+            currentFileMeta = {
+                id: Date.now().toString(),
+                name: file.name,
+                type: file.name.endsWith('.pdf') ? 'pdf' : 'excel',
+                date: new Date().toISOString(),
+                count: 0
+            };
+            
             const fileName = file.name.toLowerCase();
             if (fileName.endsWith('.pdf')) readPDF(file, source);
             else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) readExcel(file, source);
             else { let encoding = (source === 'alipay' || source === 'icbc') ? 'GBK' : 'UTF-8'; attemptRead(file, source, encoding, false); }
         }
 
-        // --- Logic: Readers (PDF, Excel, CSV) ---
+        // --- Logic: Readers ---
         function readPDF(file, source) {
             const fileReader = new FileReader();
             fileReader.onload = async function() {
                 try {
                     const pdf = await pdfjsLib.getDocument(new Uint8Array(this.result)).promise;
                     let fullText = "";
-                    for (let i = 1; i <= pdf.numPages; i++) {
-                        fullText += (await (await pdf.getPage(i)).getTextContent()).items.map(item => item.str).join(" ") + "\n";
-                    }
+                    for (let i = 1; i <= pdf.numPages; i++) fullText += (await (await pdf.getPage(i)).getTextContent()).items.map(item => item.str).join(" ") + "\n";
                     processPDFText(fullText, source);
                 } catch (err) { alert('PDF 解析失败'); }
             };
@@ -693,10 +689,9 @@
                 const abstractMatch = content.match(/(消费|退款|还款)\s+(.*)/);
                 if (abstractMatch && abstractMatch[2]) note = abstractMatch[2].substring(0, 20).trim();
                 else if(content.includes('消费')) note = '消费';
-                newTrans.push({ id: Date.now() + Math.random(), type, amount: parseFloat(amtMatch[0]), category: matchCategory(note, type), date, note, paymentMethod: '工行信用卡' });
+                newTrans.push({ id: Date.now() + Math.random(), type, amount: parseFloat(amtMatch[0]), category: matchCategory(note, type), date, note, paymentMethod: '工行信用卡', fileId: currentFileMeta.id });
             }
-            if (newTrans.length === 0) return alert('未解析到有效记录');
-            importDataCache = newTrans; showPreview();
+            finishFileProcess(newTrans);
         }
 
         function readExcel(file, source) {
@@ -743,10 +738,16 @@
                 if (typeStr.includes('不计收支') && !note.includes('赎回') && !note.includes('收益')) type = 'expense'; 
                 
                 let method = source === 'icbc' ? '工行信用卡' : (idxMethod !== -1 ? cols[idxMethod].replace('/', '') : '');
-                newTrans.push({ id: Date.now() + Math.random(), type, amount: Math.abs(amount), category: matchCategory(note, type), date: dateMatch[0], note, paymentMethod: method });
+                newTrans.push({ id: Date.now() + Math.random(), type, amount: Math.abs(amount), category: matchCategory(note, type), date: dateMatch[0], note, paymentMethod: method, fileId: currentFileMeta.id });
             }
-            if (newTrans.length === 0) throw new Error('无记录');
-            importDataCache = newTrans; showPreview();
+            finishFileProcess(newTrans);
+        }
+
+        function finishFileProcess(newTrans) {
+            if (newTrans.length === 0) return alert('未解析到有效记录');
+            currentFileMeta.count = newTrans.length;
+            importDataCache = newTrans; 
+            showPreview();
         }
 
         // --- Logic: Categories & Updates ---
@@ -760,11 +761,6 @@
                 `).join('');
                 document.getElementById('selected-category-id').value = CATEGORIES[type][0].id;
             }
-            // For edit modal
-            const editGrid = document.getElementById('edit-category-grid');
-            if (editGrid && currentEditingId) {
-                // This is handled by openEditModal mostly
-            }
         }
 
         function selectCategory(id) {
@@ -772,7 +768,6 @@
             document.querySelectorAll('[id^="cat-"]').forEach(el => el.className = el.id === `cat-${id}` ? "cursor-pointer flex flex-col items-center justify-center p-4 rounded-2xl border border-blue-500 bg-blue-500/20 text-blue-400 transition-all shadow-[0_0_15px_rgba(59,130,246,0.3)]" : "cursor-pointer flex flex-col items-center justify-center p-4 rounded-2xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-400 transition-all");
         }
 
-        // --- Logic: Edit Category (Click to Save) ---
         function openEditModal(id) {
             currentEditingId = id;
             const t = transactions.find(x => x.id === id);
@@ -811,6 +806,7 @@
         
         function resetImport() {
             importDataCache = [];
+            currentFileMeta = null;
             document.getElementById('import-step-1').classList.remove('hidden');
             document.getElementById('import-preview').classList.add('hidden');
             document.getElementById('file-upload').value = '';
@@ -823,13 +819,9 @@
             
             importDataCache.forEach(newItem => {
                 const newItemDate = new Date(newItem.date).getTime();
-                
-                // Check for duplicates in existing transactions
-                // Criteria: Same Amount AND Same Type AND Time within 60 seconds
                 const isDuplicate = transactions.some(existingItem => {
                     const existingItemDate = new Date(existingItem.date).getTime();
                     const timeDiff = Math.abs(newItemDate - existingItemDate);
-                    
                     return (
                         existingItem.amount === newItem.amount &&
                         existingItem.type === newItem.type &&
@@ -845,15 +837,35 @@
                 }
             });
 
+            // Add File Meta if any new transactions were added
+            if (addedCount > 0) {
+                currentFileMeta.count = addedCount; // Update count to reflect actually added
+                importedFiles.push(currentFileMeta);
+            }
+
             saveToStorage(); 
             
-            if (dupCount > 0) {
-                showToast(`成功导入 ${addedCount} 条数据，过滤重复 ${dupCount} 条`);
-            } else {
-                showToast(`成功导入 ${addedCount} 条数据`);
-            }
+            if (dupCount > 0) showToast(`成功导入 ${addedCount} 条，过滤重复 ${dupCount} 条`);
+            else showToast(`成功导入 ${addedCount} 条数据`);
             
-            router('dashboard');
+            router('import'); // Stay on import page to see list
+        }
+
+        // --- File Management ---
+        function deleteFile(fileId) {
+            if(!confirm('确定要删除此文件及其所有相关记录吗？')) return;
+            
+            // Remove transactions associated with this file
+            const initialCount = transactions.length;
+            transactions = transactions.filter(t => t.fileId !== fileId);
+            const deletedCount = initialCount - transactions.length;
+            
+            // Remove file meta
+            importedFiles = importedFiles.filter(f => f.id !== fileId);
+            
+            saveToStorage();
+            showToast(`已删除文件，共移除 ${deletedCount} 条记录`);
+            renderImport(document.getElementById('content-area')); // Refresh list
         }
 
         // --- Init ---
