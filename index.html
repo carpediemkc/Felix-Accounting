@@ -31,7 +31,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', 'Noto Sans SC', sans-serif; background-color: #020617; color: #e2e8f0; }
-        .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .fade-in { animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -59,7 +59,7 @@
             </div>
             <div>
                 <h1 class="font-bold text-xl text-slate-100 tracking-tight glow-text">Felix账本</h1>
-                <p class="text-xs text-slate-500 font-mono tracking-wider mt-1">FINANCE OS v2.1</p>
+                <p class="text-xs text-slate-500 font-mono tracking-wider mt-1">FINANCE OS v2.4</p>
             </div>
         </div>
 
@@ -116,9 +116,28 @@
     </main>
 
     <!-- Toast -->
-    <div id="toast" class="fixed top-6 right-6 bg-slate-800/90 text-white px-6 py-4 rounded-xl shadow-2xl shadow-black/50 border border-slate-700/50 backdrop-blur-xl transform translate-y-[-200%] transition-all duration-500 z-50 flex items-center gap-3 font-medium">
+    <div id="toast" class="fixed top-6 right-6 bg-slate-800/90 text-white px-6 py-4 rounded-xl shadow-2xl shadow-black/50 border border-slate-700/50 backdrop-blur-xl transform translate-y-[-200%] transition-all duration-500 z-50 flex items-center gap-3 font-medium pointer-events-none">
         <div class="bg-emerald-500/20 text-emerald-400 rounded-full p-1"><i data-lucide="check" class="w-4 h-4"></i></div>
         <span id="toast-msg">操作成功</span>
+    </div>
+
+    <!-- Confirm Modal (New!) -->
+    <div id="confirm-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-[60] flex items-center justify-center fade-in">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-100">
+            <div class="flex items-center gap-4 mb-4">
+                <div class="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center text-rose-500 shrink-0">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg text-slate-100">确认删除？</h3>
+                    <p class="text-sm text-slate-400" id="confirm-msg">此操作无法撤销。</p>
+                </div>
+            </div>
+            <div class="flex gap-3 justify-end mt-6">
+                <button onclick="closeConfirmModal()" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors">取消</button>
+                <button id="confirm-btn-action" class="px-4 py-2 rounded-lg text-sm font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-900/50 transition-all">确认删除</button>
+            </div>
+        </div>
     </div>
 
     <!-- Edit Modal -->
@@ -167,7 +186,7 @@
 
         // Initialize Data
         let transactions = [];
-        let importedFiles = []; // New: Store metadata of imported files
+        let importedFiles = []; 
         
         try {
             const savedData = localStorage.getItem('myBookkeepingData');
@@ -184,16 +203,15 @@
         let importDataCache = []; 
         let charts = {};
         let currentEditingId = null;
-        let currentFileMeta = null; // Store temp file meta during import
+        let currentFileMeta = null;
 
         // --- Helpers ---
         function saveToStorage() {
             try {
                 localStorage.setItem('myBookkeepingData', JSON.stringify(transactions));
                 localStorage.setItem('myBookkeepingFiles', JSON.stringify(importedFiles));
-                console.log('Data saved.');
             } catch (e) {
-                alert('数据保存失败！请清理缓存。');
+                showToast('数据保存失败：缓存已满');
             }
         }
 
@@ -302,7 +320,7 @@
                                     <span class="font-bold text-slate-200 text-sm">${new Date(t.date).getDate()}</span>
                                     <span class="text-[10px] uppercase text-slate-500">${new Date(t.date).toLocaleString('en', {month:'short'})}</span>
                                 </div>
-                                <div onclick="openEditModal(${t.id})" class="w-12 h-12 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xl cursor-pointer hover:bg-slate-700 hover:border-blue-500/30 hover:text-blue-400 transition-all relative flex-shrink-0 group/icon" title="点击修改分类">
+                                <div onclick="openEditModal('${t.id}')" class="w-12 h-12 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xl cursor-pointer hover:bg-slate-700 hover:border-blue-500/30 hover:text-blue-400 transition-all relative flex-shrink-0 group/icon" title="点击修改分类">
                                     ${t.category.icon}
                                     <div class="absolute -bottom-1 -right-1 bg-slate-900 border border-slate-700 rounded-full p-1 opacity-0 group-hover/icon:opacity-100 transition-opacity">
                                         <i data-lucide="pencil" class="w-2.5 h-2.5 text-blue-400"></i>
@@ -324,7 +342,7 @@
                                 <span class="font-bold text-lg font-mono tracking-tight ${t.type === 'income' ? 'text-emerald-400' : 'text-slate-200'}">
                                     ${t.type === 'income' ? '+' : '-'} ${t.amount.toFixed(2)}
                                 </span>
-                                <button onclick="deleteTransaction(${t.id})" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-600 hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100">
+                                <button onclick="requestDeleteTransaction('${t.id}')" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-600 hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100">
                                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                                 </button>
                             </div>
@@ -390,11 +408,10 @@
             updateCategories('expense');
         }
 
-        // --- Render: Import & Files ---
+        // --- Render: Import ---
         function renderImport(container) {
             container.innerHTML = `
                 <div class="max-w-4xl mx-auto space-y-8 mt-4">
-                    <!-- Upload Area -->
                     <div id="import-step-1" class="glass-panel rounded-3xl p-10 shadow-2xl">
                         <div class="text-center mb-10">
                             <div class="w-16 h-16 bg-slate-800 border border-slate-700 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-inner">
@@ -428,16 +445,16 @@
                             </label>
                         </div>
 
-                        <div id="drop-zone" class="border-2 border-dashed border-slate-700 rounded-3xl h-48 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-500/5 transition-all relative group bg-slate-800/20">
+                        <div id="drop-zone" class="border-2 border-dashed border-slate-700 rounded-3xl h-56 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-500/5 transition-all relative group bg-slate-800/20">
                             <input type="file" id="file-upload" accept=".csv, .xlsx, .xls, .pdf" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleFileSelect(event)">
                             <div class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform border border-slate-700">
                                 <i data-lucide="plus" class="w-8 h-8 text-slate-400 group-hover:text-blue-400"></i>
                             </div>
                             <p class="text-slate-300 font-bold text-lg group-hover:text-blue-400">点击或拖拽上传</p>
+                            <p class="text-xs text-slate-500 mt-2">AI 智能识别编码与格式</p>
                         </div>
                     </div>
 
-                    <!-- Import Preview (Hidden by default) -->
                     <div id="import-preview" class="hidden glass-panel rounded-3xl shadow-xl overflow-hidden mb-8">
                         <div class="p-6 border-b border-slate-700/50 flex justify-between items-center bg-emerald-900/20">
                             <div class="flex items-center gap-3 text-emerald-400">
@@ -450,7 +467,6 @@
                         <div class="p-6 border-t border-slate-700/50 bg-slate-800/30 text-right"><button onclick="commitImport()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-10 py-3 rounded-xl font-bold shadow-lg shadow-emerald-900/50 transition-all hover:scale-105 active:scale-95 border border-emerald-500/50">确认导入</button></div>
                     </div>
 
-                    <!-- Imported Files List -->
                     <div class="glass-panel rounded-3xl p-8 border border-slate-700/50">
                         <h3 class="font-bold text-slate-100 mb-6 flex items-center gap-2"><i data-lucide="folder-check" class="w-5 h-5 text-blue-400"></i> 已上传文件</h3>
                         <div class="space-y-3" id="file-list">
@@ -466,7 +482,7 @@
                                                 <div class="text-xs text-slate-500 font-mono">${new Date(file.date).toLocaleString()} • ${file.count} 笔记录</div>
                                             </div>
                                         </div>
-                                        <button onclick="deleteFile('${file.id}')" class="text-slate-500 hover:text-rose-400 p-2 rounded-lg hover:bg-rose-500/10 transition-colors" title="删除此文件及相关记录">
+                                        <button onclick="requestDeleteFile('${file.id}')" class="text-slate-500 hover:text-rose-400 p-2 rounded-lg hover:bg-rose-500/10 transition-colors" title="删除此文件及相关记录">
                                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                                         </button>
                                     </div>
@@ -770,7 +786,7 @@
 
         function openEditModal(id) {
             currentEditingId = id;
-            const t = transactions.find(x => x.id === id);
+            const t = transactions.find(x => x.id == id); // Loose equality
             const grid = document.getElementById('edit-category-grid');
             grid.innerHTML = CATEGORIES[t.type].map(c => `
                 <div onclick="quickUpdateCategory('${c.id}')" class="cursor-pointer flex flex-col items-center justify-center p-4 rounded-2xl border transition-all ${c.id === t.category.id ? 'border-blue-500 bg-blue-500/20 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-400'}">
@@ -782,7 +798,7 @@
         }
 
         function quickUpdateCategory(catId) {
-            const tIndex = transactions.findIndex(x => x.id === currentEditingId);
+            const tIndex = transactions.findIndex(x => x.id == currentEditingId); // Loose equality
             if (tIndex !== -1) {
                 transactions[tIndex].category = CATEGORIES[transactions[tIndex].type].find(c => c.id === catId);
                 saveToStorage();
@@ -852,20 +868,58 @@
         }
 
         // --- File Management ---
+        function requestDeleteFile(fileId) {
+            showConfirm('将删除该文件导入的所有交易记录，且不可恢复。', () => deleteFile(fileId));
+        }
+
         function deleteFile(fileId) {
-            if(!confirm('确定要删除此文件及其所有相关记录吗？')) return;
-            
-            // Remove transactions associated with this file
             const initialCount = transactions.length;
-            transactions = transactions.filter(t => t.fileId !== fileId);
+            // Filter out transactions with matching fileId
+            transactions = transactions.filter(t => String(t.fileId) !== String(fileId));
             const deletedCount = initialCount - transactions.length;
             
-            // Remove file meta
-            importedFiles = importedFiles.filter(f => f.id !== fileId);
+            // Filter out the file meta
+            importedFiles = importedFiles.filter(f => String(f.id) !== String(fileId));
             
             saveToStorage();
             showToast(`已删除文件，共移除 ${deletedCount} 条记录`);
-            renderImport(document.getElementById('content-area')); // Refresh list
+            
+            // Refresh the import view
+            renderImport(document.getElementById('content-area'));
+            lucide.createIcons();
+            bindDragEvents();
+        }
+
+        function requestDeleteTransaction(id) {
+            showConfirm('确定要删除这条记录吗？', () => deleteTransaction(id));
+        }
+
+        function deleteTransaction(id) {
+            // Loose equality to handle string vs number ID mismatch
+            transactions = transactions.filter(t => t.id != id); 
+            saveToStorage(); 
+            if(currentView === 'dashboard') renderDashboard(document.getElementById('content-area')); 
+            showToast('已删除记录'); 
+            lucide.createIcons(); 
+        }
+
+        // --- Confirm Modal Logic ---
+        let confirmCallback = null;
+
+        function showConfirm(msg, callback) {
+            document.getElementById('confirm-msg').textContent = msg;
+            confirmCallback = callback;
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirm-modal').classList.add('hidden');
+            confirmCallback = null;
+        }
+
+        document.getElementById('confirm-btn-action').onclick = function() {
+            if(confirmCallback) confirmCallback();
+            closeConfirmModal();
         }
 
         // --- Init ---
