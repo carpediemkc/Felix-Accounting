@@ -817,8 +817,43 @@
         }
 
         function commitImport() {
-            transactions = [...importDataCache, ...transactions];
-            saveToStorage(); showToast(`成功导入 ${importDataCache.length} 条数据`); router('dashboard');
+            // Deduplication Logic
+            let addedCount = 0;
+            let dupCount = 0;
+            
+            importDataCache.forEach(newItem => {
+                const newItemDate = new Date(newItem.date).getTime();
+                
+                // Check for duplicates in existing transactions
+                // Criteria: Same Amount AND Same Type AND Time within 60 seconds
+                const isDuplicate = transactions.some(existingItem => {
+                    const existingItemDate = new Date(existingItem.date).getTime();
+                    const timeDiff = Math.abs(newItemDate - existingItemDate);
+                    
+                    return (
+                        existingItem.amount === newItem.amount &&
+                        existingItem.type === newItem.type &&
+                        timeDiff < 60 * 1000 // Less than 1 minute difference
+                    );
+                });
+
+                if (!isDuplicate) {
+                    transactions.push(newItem);
+                    addedCount++;
+                } else {
+                    dupCount++;
+                }
+            });
+
+            saveToStorage(); 
+            
+            if (dupCount > 0) {
+                showToast(`成功导入 ${addedCount} 条数据，过滤重复 ${dupCount} 条`);
+            } else {
+                showToast(`成功导入 ${addedCount} 条数据`);
+            }
+            
+            router('dashboard');
         }
 
         // --- Init ---
